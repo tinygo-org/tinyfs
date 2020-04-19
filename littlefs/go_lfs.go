@@ -1,4 +1,4 @@
-package lfs
+package littlefs
 
 // #include <string.h>
 // #include <stdlib.h>
@@ -13,8 +13,8 @@ import (
 	"unsafe"
 
 	"github.com/bgould/tinyfs"
-
-	gopointer "github.com/mattn/go-pointer"
+	"github.com/bgould/tinyfs/internal/gopointer"
+	"github.com/bgould/tinyfs/internal/util"
 )
 
 const (
@@ -206,7 +206,7 @@ func (l *LFS) Rename(oldPath string, newPath string) error {
 	return errval(C.lfs_rename(l.lfs, cs1, cs2))
 }
 
-func (l *LFS) Stat(path string) (*Info, error) {
+func (l *LFS) Stat(path string) (os.FileInfo, error) {
 	cs := cstring(path)
 	defer C.free(unsafe.Pointer(cs))
 	info := C.struct_lfs_info{}
@@ -221,18 +221,18 @@ func (l *LFS) Stat(path string) (*Info, error) {
 }
 
 func (l *LFS) Mkdir(path string, _ os.FileMode) error {
-	cs := cstring(path)
+	cs := (*C.char)(cstring(path))
 	defer C.free(unsafe.Pointer(cs))
 	return errval(C.lfs_mkdir(l.lfs, cs))
 }
 
-func (l *LFS) Open(path string) (*File, error) {
+func (l *LFS) Open(path string) (tinyfs.File, error) {
 	return l.OpenFile(path, os.O_RDONLY)
 }
 
-func (l *LFS) OpenFile(path string, flags int) (*File, error) {
+func (l *LFS) OpenFile(path string, flags int) (tinyfs.File, error) {
 
-	cs := cstring(path)
+	cs := (*C.char)(cstring(path))
 	defer C.free(unsafe.Pointer(cs))
 	file := &File{lfs: l, name: path}
 
@@ -420,26 +420,17 @@ func (f *File) Readdir(n int) (infos []os.FileInfo, err error) {
 	}
 }
 
-// would be nice to use C.CString instead, but TinyGo doesn't seem to support
-func cstring(s string) *C.char {
-	ptr := C.malloc(C.size_t(len(s) + 1))
-	buf := (*[1 << 28]byte)(ptr)[: len(s)+1 : len(s)+1]
-	copy(buf, s)
-	buf[len(s)] = 0
-	return (*C.char)(ptr)
-}
-
-// would be nice to use C.GoString instead, but TinyGo doesn't seem to support
-func gostring(s *C.char) string {
-	slen := int(C.strlen(s))
-	sbuf := make([]byte, slen)
-	copy(sbuf, (*[1 << 28]byte)(unsafe.Pointer(s))[:slen:slen])
-	return string(sbuf)
-}
-
 func errval(errno C.int) error {
 	if errno < errOK {
 		return Error(errno)
 	}
 	return nil
+}
+
+func cstring(s string) *C.char {
+	return (*C.char)(util.CString(s))
+}
+
+func gostring(s *C.char) string {
+	return util.GoString(unsafe.Pointer(s))
 }

@@ -1,12 +1,11 @@
-package lfs
+package littlefs
 
 import (
 	"fmt"
 	"unsafe"
 
 	"github.com/bgould/tinyfs"
-
-	gopointer "github.com/mattn/go-pointer"
+	"github.com/bgould/tinyfs/internal/gopointer"
 )
 
 import "C"
