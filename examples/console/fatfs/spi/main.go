@@ -10,13 +10,12 @@ import (
 )
 
 var (
-	blockDevice = flash.NewQSPI(
-		machine.QSPI_CS,
-		machine.QSPI_SCK,
-		machine.QSPI_DATA0,
-		machine.QSPI_DATA1,
-		machine.QSPI_DATA2,
-		machine.QSPI_DATA3,
+	blockDevice = flash.NewSPI(
+		&machine.SPI1,
+		machine.SPI1_MOSI_PIN,
+		machine.SPI1_MISO_PIN,
+		machine.SPI1_SCK_PIN,
+		machine.SPI1_CS_PIN,
 	)
 
 	filesystem = fatfs.New(blockDevice)
