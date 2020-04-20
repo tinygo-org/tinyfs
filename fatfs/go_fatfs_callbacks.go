@@ -15,7 +15,7 @@ import (
 import "C"
 
 const (
-	debug = true
+	debug = false
 )
 
 //export go_fatfs_disk_read
