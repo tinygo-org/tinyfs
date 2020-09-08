@@ -1,3 +1,5 @@
+// +build tinygo
+
 package flash_example
 
 import (
@@ -9,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bgould/go-fatfs"
+	"github.com/bgould/tinyfs"
+	"github.com/bgould/tinyfs/fatfs"
 
 	"tinygo.org/x/drivers/flash"
 )
@@ -27,7 +30,7 @@ var (
 	readyLED = machine.LED
 
 	flashdev *flash.Device
-	blockdev fatfs.BlockDevice
+	blockdev tinyfs.BlockDevice
 	fs       *fatfs.FATFS
 
 	currdir = "/"
@@ -279,7 +282,7 @@ func mkdir(argv []string) {
 		println("Usage: mkdir <target dir>")
 		return
 	}
-	err := fs.Mkdir(tgt)
+	err := fs.Mkdir(tgt, 0777)
 	if err != nil {
 		println("Could not mkdir " + tgt + ": " + err.Error())
 	}
@@ -342,7 +345,7 @@ func write(argv []string) {
 		println("Trying receive to " + tgt)
 	}
 	buf := make([]byte, 1)
-	f, err := fs.OpenFile(tgt, fatfs.FileAccessWrite|fatfs.FileAccessCreateAlways)
+	f, err := fs.OpenFile(tgt, os.O_WRONLY|os.O_CREATE)
 	if err != nil {
 		fmt.Printf("error opening %s: %s\r\n", tgt, err.Error())
 		return
@@ -376,7 +379,7 @@ func createSampleFile(name string, buf []byte) (int, error) {
 	for j := uint8(0); j < uint8(len(buf)); j++ {
 		buf[j] = 0x20 + j
 	}
-	f, err := fs.OpenFile(name, fatfs.FileAccessCreateAlways|fatfs.FileAccessWrite)
+	f, err := fs.OpenFile(name, os.O_CREATE|os.O_WRONLY)
 	if err != nil {
 		return 0, fmt.Errorf("error opening %s: %s", name, err.Error())
 	}

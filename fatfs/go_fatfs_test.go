@@ -3,8 +3,6 @@ package fatfs
 import (
 	"testing"
 
-	"periph.io/x/periph/host/fs"
-
 	"github.com/bgould/tinyfs"
 )
 
@@ -64,6 +62,8 @@ func TestDirectories(t *testing.T) {
 		largeSize = 128
 	)
 	t.Run("RootDirectory", func(t *testing.T) {
+		fs, _, unmount := createTestFS(t)
+		defer unmount()
 		f, err := fs.Open("/")
 		check(t, err)
 		check(t, f.Close())

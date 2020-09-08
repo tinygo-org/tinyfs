@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/bgould/go-fatfs"
+	"github.com/bgould/tinyfs/fatfs"
 )
 
 func main() {
