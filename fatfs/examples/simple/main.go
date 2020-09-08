@@ -5,13 +5,14 @@ import (
 	"io"
 	"os"
 
+	"github.com/bgould/tinyfs"
 	"github.com/bgould/tinyfs/fatfs"
 )
 
 func main() {
 
 	// create/format/mount the filesystem
-	fs := fatfs.New(fatfs.NewMemoryDevice(4096, 64))
+	fs := fatfs.New(tinyfs.NewMemoryDevice(4096, 64, 64))
 	if err := fs.Format(); err != nil {
 		fmt.Println("Could not format", err)
 		os.Exit(1)
@@ -37,14 +38,14 @@ func main() {
 
 	path := "/tmp"
 	fmt.Println("making directory", path)
-	if err := fs.Mkdir(path); err != nil {
+	if err := fs.Mkdir(path, 0777); err != nil {
 		fmt.Println("Could not create "+path+" dir", err)
 		os.Exit(1)
 	}
 
 	filepath := path + "/test.txt"
 	fmt.Println("opening file", filepath)
-	f, err := fs.OpenFile(filepath, fatfs.FileAccessCreateAlways|fatfs.FileAccessWrite)
+	f, err := fs.OpenFile(filepath, os.O_CREATE|os.O_WRONLY)
 	if err != nil {
 		fmt.Println("Could not open file", err)
 		os.Exit(1)
@@ -97,18 +98,20 @@ func main() {
 	}
 
 	fmt.Println("opening file read only")
-	f, err = fs.OpenFile(filepath, fatfs.FileAccessRead)
+	f, err = fs.OpenFile(filepath, os.O_RDONLY)
 	if err != nil {
 		fmt.Println("Could not open file", err)
 		os.Exit(1)
 	}
 	defer f.Close()
 
-	if size, err := f.Size(); err != nil {
-		fmt.Printf("Failed getting file size: %v\n", err)
-	} else {
-		fmt.Printf("file size: %d\n", size)
-	}
+	/*
+		if size, err := f.Size(); err != nil {
+			fmt.Printf("Failed getting file size: %v\n", err)
+		} else {
+			fmt.Printf("file size: %d\n", size)
+		}
+	*/
 
 	buf := make([]byte, 57)
 	for n := 0; n < 50; n++ {
