@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bgould/tinyfs"
-	"github.com/bgould/tinyfs/fatfs"
+	"github.com/tinygo-org/tinyfs"
+	"github.com/tinygo-org/tinyfs/fatfs"
 
 	"tinygo.org/x/drivers/flash"
 )

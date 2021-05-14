@@ -5,7 +5,7 @@ package main
 import (
 	"machine"
 
-	example "github.com/bgould/tinyfs/examples/flash"
+	example "github.com/tinygo-org/tinyfs/examples/flash"
 
 	"tinygo.org/x/drivers/flash"
 )

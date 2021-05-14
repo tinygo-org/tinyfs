@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bgould/tinyfs"
+	"github.com/tinygo-org/tinyfs"
 )
 
 const (
