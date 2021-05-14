@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/bgould/tinyfs"
-	"github.com/bgould/tinyfs/fatfs"
+	"github.com/tinygo-org/tinyfs"
+	"github.com/tinygo-org/tinyfs/fatfs"
 )
 
 func main() {
