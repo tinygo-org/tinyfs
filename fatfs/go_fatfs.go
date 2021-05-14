@@ -274,7 +274,7 @@ func (l *FATFS) OpenFile(path string, flags int) (tinyfs.File, error) {
 		// file
 		file.typ = 0
 		file.hndl = unsafe.Pointer(C.go_fatfs_new_fil())
-		errno = C.f_open(l.fs, (*C.FIL)(file.hndl), cs, C.BYTE(flags))
+		errno = C.f_open(l.fs, (*C.FIL)(file.hndl), cs, translateFlags(flags))
 	}
 
 	// check to make sure f_open/f_opendir didn't produce an error
@@ -288,6 +288,35 @@ func (l *FATFS) OpenFile(path string, flags int) (tinyfs.File, error) {
 
 	// file handle was initialized successfully
 	return file, nil
+}
+
+// translateFlags translates osFlags such as os.O_RDONLY into fatfs flags.
+// http://elm-chan.org/fsw/ff/doc/open.html
+func translateFlags(osFlags int) C.BYTE {
+	var result C.BYTE
+	result = C.FA_READ
+	switch osFlags {
+	case os.O_RDONLY:
+		// r
+		result = C.FA_READ
+	case os.O_WRONLY | os.O_CREATE | os.O_TRUNC:
+		// w
+		result = C.FA_CREATE_ALWAYS | C.FA_WRITE
+	case os.O_WRONLY | os.O_CREATE | os.O_APPEND:
+		// a
+		result = C.FA_OPEN_APPEND | C.FA_WRITE
+	case os.O_RDWR:
+		// r+
+		result = C.FA_READ | C.FA_WRITE
+	case os.O_RDWR | os.O_CREATE | os.O_TRUNC:
+		// w+
+		result = C.FA_CREATE_ALWAYS | C.FA_WRITE | C.FA_READ
+	case os.O_RDWR | os.O_CREATE | os.O_APPEND:
+		// a+
+		result = C.FA_OPEN_APPEND | C.FA_WRITE | C.FA_READ
+	default:
+	}
+	return result
 }
 
 type File struct {
