@@ -3,7 +3,7 @@ package fatfs
 import (
 	"testing"
 
-	"github.com/tinygo-org/tinyfs"
+	"tinygo.org/x/tinyfs"
 )
 
 const (

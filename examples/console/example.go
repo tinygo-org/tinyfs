@@ -11,9 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tinygo-org/tinyfs"
-
 	"tinygo.org/x/drivers/flash"
+	"tinygo.org/x/tinyfs"
 )
 
 const consoleBufLen = 64
@@ -26,7 +25,7 @@ var (
 
 	input [consoleBufLen]byte
 
-	console  = machine.UART0
+	console  = machine.Serial
 	readyLED = machine.LED
 
 	flashdev *flash.Device
