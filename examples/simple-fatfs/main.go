@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/tinygo-org/tinyfs"
-	"github.com/tinygo-org/tinyfs/fatfs"
+	"tinygo.org/x/tinyfs"
+	"tinygo.org/x/tinyfs/fatfs"
 )
 
 func main() {
@@ -68,7 +68,7 @@ func main() {
 
 	for i := 0; i < 20; i++ {
 		if _, err := f.Write([]byte("01234567890abcdef")); err != nil {
-			fmt.Println("Could not write: %s", err.Error())
+			fmt.Println("Could not write: ", err.Error())
 			os.Exit(1)
 		}
 	}

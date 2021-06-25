@@ -1,4 +1,4 @@
-module github.com/tinygo-org/tinyfs
+module tinygo.org/x/tinyfs
 
 go 1.14
 

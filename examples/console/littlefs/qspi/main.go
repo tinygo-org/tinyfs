@@ -6,8 +6,8 @@ import (
 	"machine"
 	"time"
 
-	"github.com/tinygo-org/tinyfs/examples/console"
-	"github.com/tinygo-org/tinyfs/littlefs"
+	"tinygo.org/x/tinyfs/examples/console"
+	"tinygo.org/x/tinyfs/littlefs"
 	"tinygo.org/x/drivers/flash"
 )
 

@@ -8,11 +8,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/tinygo-org/tinyfs"
-	"github.com/tinygo-org/tinyfs/internal/gopointer"
+	"tinygo.org/x/tinyfs"
+	"tinygo.org/x/tinyfs/internal/gopointer"
 )
-
-import "C"
 
 const (
 	debug = false

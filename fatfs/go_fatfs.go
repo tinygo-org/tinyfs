@@ -11,9 +11,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/tinygo-org/tinyfs"
-	"github.com/tinygo-org/tinyfs/internal/gopointer"
-	"github.com/tinygo-org/tinyfs/internal/util"
+	"tinygo.org/x/tinyfs"
+	"tinygo.org/x/tinyfs/internal/gopointer"
+	"tinygo.org/x/tinyfs/internal/util"
 )
 
 const (
