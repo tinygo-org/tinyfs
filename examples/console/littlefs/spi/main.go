@@ -6,16 +6,16 @@ import (
 	"machine"
 	"time"
 
+	"tinygo.org/x/drivers/flash"
 	"tinygo.org/x/tinyfs/examples/console"
 	"tinygo.org/x/tinyfs/littlefs"
-	"tinygo.org/x/drivers/flash"
 )
 
 var (
 	blockDevice = flash.NewSPI(
 		&machine.SPI1,
-		machine.SPI1_MOSI_PIN,
-		machine.SPI1_MISO_PIN,
+		machine.SPI1_SDO_PIN,
+		machine.SPI1_SDI_PIN,
 		machine.SPI1_SCK_PIN,
 		machine.SPI1_CS_PIN,
 	)
