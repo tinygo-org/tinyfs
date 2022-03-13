@@ -1,3 +1,4 @@
+//go:build tinygo && osfilesystem
 // +build tinygo,osfilesystem
 
 package tinyfs
