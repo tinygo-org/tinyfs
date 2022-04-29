@@ -1,3 +1,9 @@
+0.2.0
+---
+
+- Compatability with TinyGo 0.23.0
+
+
 0.1.0
 ---
 - **first release**
