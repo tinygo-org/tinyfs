@@ -29,7 +29,8 @@ var (
 	console  = machine.Serial
 	readyLED = machine.LED
 
-	flashdev *flash.Device
+	// flashdev *flash.Device
+	blockdev tinyfs.BlockDevice
 	fs       tinyfs.Filesystem
 
 	currdir = "/"
@@ -61,10 +62,10 @@ const (
 	StateCSI
 )
 
-func RunFor(dev *flash.Device, filesys tinyfs.Filesystem) {
+func RunFor(dev tinyfs.BlockDevice, filesys tinyfs.Filesystem) {
 	time.Sleep(3 * time.Second)
+	blockdev = dev
 
-	flashdev = dev
 	fs = filesys
 
 	readyLED.Configure(machine.PinConfig{Mode: machine.PinOutput})
@@ -175,6 +176,18 @@ func dbg(argv []string) {
 }
 
 func lsblk(argv []string) {
+	if flashdev, ok := blockdev.(*flash.Device); ok {
+		lsblk_flash(flashdev)
+		return
+	}
+	if blockdev == machine.Flash {
+		lsblk_machine()
+		return
+	}
+	println("Unknown device")
+}
+
+func lsblk_flash(flashdev *flash.Device) {
 	attrs := flashdev.Attrs()
 	status1, _ := flashdev.ReadStatus()
 	status2, _ := flashdev.ReadStatus2()
@@ -207,6 +220,19 @@ func lsblk(argv []string) {
 		attrs.SupportsQSPIWrites,
 		attrs.WriteStatusSplit,
 		attrs.SingleStatusByte,
+	)
+}
+
+func lsblk_machine() {
+	fmt.Printf(
+		"\n-------------------------------------\r\n"+
+			" Device Information:  \r\n"+
+			"-------------------------------------\r\n"+
+			" flash data start: %08X\r\n"+
+			" flash data end:  %08X\r\n"+
+			"-------------------------------------\r\n\r\n",
+		machine.FlashDataStart(),
+		machine.FlashDataEnd(),
 	)
 }
 
@@ -524,7 +550,7 @@ func xxd(argv []string) {
 	buf := make([]byte, size)
 	//bsz := uint64(flash.SectorSize)
 	//blockdev.ReadBlock(uint32(addr/bsz), uint32(addr%bsz), buf)
-	flashdev.ReadAt(buf, int64(addr))
+	blockdev.ReadAt(buf, int64(addr))
 	xxdfprint(os.Stdout, uint32(addr), buf)
 }
 
