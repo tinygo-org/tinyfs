@@ -74,19 +74,6 @@ func RunFor(dev tinyfs.BlockDevice, filesys tinyfs.Filesystem) {
 	readyLED.Low()
 	println("SPI Configured. Reading flash info")
 
-	/*
-		lfsConfig := flashlfs.NewConfig()
-		if blockCount == 0 {
-			lfsConfig.BlockCount = (flashdev.Attrs().TotalSize / lfsConfig.BlockSize) - startBlock
-		} else {
-			lfsConfig.BlockCount = blockCount
-		}
-		println("Start block:", startBlock)
-		println("Block count:", lfsConfig.BlockCount)
-
-		blockdev = flashlfs.NewBlockDevice(flashdev, startBlock, lfsConfig.BlockSize)
-	*/
-
 	prompt()
 
 	var state = StateInput
@@ -180,11 +167,7 @@ func lsblk(argv []string) {
 		lsblk_flash(flashdev)
 		return
 	}
-	if blockdev == machine.Flash {
-		lsblk_machine()
-		return
-	}
-	println("Unknown device")
+	lsblk_machine()
 }
 
 func lsblk_flash(flashdev *flash.Device) {
@@ -220,19 +203,6 @@ func lsblk_flash(flashdev *flash.Device) {
 		attrs.SupportsQSPIWrites,
 		attrs.WriteStatusSplit,
 		attrs.SingleStatusByte,
-	)
-}
-
-func lsblk_machine() {
-	fmt.Printf(
-		"\n-------------------------------------\r\n"+
-			" Device Information:  \r\n"+
-			"-------------------------------------\r\n"+
-			" flash data start: %08X\r\n"+
-			" flash data end:  %08X\r\n"+
-			"-------------------------------------\r\n\r\n",
-		machine.FlashDataStart(),
-		machine.FlashDataEnd(),
 	)
 }
 
