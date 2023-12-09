@@ -12,11 +12,15 @@ import (
 func main() {
 
 	// create/format/mount the filesystem
-	fs := fatfs.New(tinyfs.NewMemoryDevice(4096, 64, 64))
+	fs := fatfs.New(tinyfs.NewMemoryDevice(4096, 512, 1024))
+	fs.Configure(&fatfs.Config{SectorSize: fatfs.SectorSize})
+
+	fmt.Println("Formatting...")
 	if err := fs.Format(); err != nil {
 		fmt.Println("Could not format", err)
 		os.Exit(1)
 	}
+	fmt.Println("Mounting...")
 	if err := fs.Mount(); err != nil {
 		fmt.Println("Could not mount", err)
 		os.Exit(1)
@@ -45,7 +49,7 @@ func main() {
 
 	filepath := path + "/test.txt"
 	fmt.Println("opening file", filepath)
-	f, err := fs.OpenFile(filepath, os.O_CREATE|os.O_WRONLY)
+	f, err := fs.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC)
 	if err != nil {
 		fmt.Println("Could not open file", err)
 		os.Exit(1)

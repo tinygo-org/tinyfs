@@ -196,6 +196,7 @@ func (l *FATFS) Mount() error {
 
 func (l *FATFS) Format() error {
 	work := make([]byte, SectorSize)
+	println("formatting: ", l.fs, C.FM_FAT, work, len(work))
 	return errval(C.f_mkfs(l.fs, C.FM_FAT, 0, unsafe.Pointer(&work[0]), C.UINT(len(work))))
 }
 
@@ -299,6 +300,8 @@ func translateFlags(osFlags int) C.BYTE {
 	case os.O_RDONLY:
 		// r
 		result = C.FA_READ
+	// FIXME: what is the correct behavior when os.O_CREATE is specified without
+	// os.O_TRUNC or os.O_APPEND?
 	case os.O_WRONLY | os.O_CREATE | os.O_TRUNC:
 		// w
 		result = C.FA_CREATE_ALWAYS | C.FA_WRITE
