@@ -153,7 +153,7 @@ func (info *Info) IsDir() bool {
 	return (info.attr & AttrDirectory) > 0
 }
 
-func (info *Info) Sys() interface{} {
+func (info *Info) Sys() any {
 	return nil
 }
 
