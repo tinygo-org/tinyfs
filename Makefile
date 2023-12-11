@@ -15,6 +15,8 @@ smoke-test:
 	@md5sum ./build/test.hex
 	tinygo build -size short -o ./build/test.hex -target=itsybitsy-m4 ./examples/console/fatfs/qspi/
 	@md5sum ./build/test.hex
+	tinygo build -size short -o ./build/test.hex -target=feather-m4 ./examples/console/fatfs/sdcard/
+	@md5sum ./build/test.hex
 	tinygo build -size short -o ./build/test.hex -target=itsybitsy-m0 ./examples/console/littlefs/spi/
 	@md5sum ./build/test.hex
 	tinygo build -size short -o ./build/test.hex -target=itsybitsy-m4 ./examples/console/littlefs/qspi/
