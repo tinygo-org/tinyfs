@@ -1,3 +1,12 @@
+0.4.0
+---
+- **littlefs**
+    - update to littlefs 2.8.1
+- **examples**
+    - Adding sdcard example for fatfs
+- **modules**
+    - update to latest version of tinygo drivers 0.27.0
+
 0.3.0
 ---
 - **examples**
