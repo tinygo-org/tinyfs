@@ -5,21 +5,27 @@ package main
 
 import (
 	"os"
+
+	"tinygo.org/x/tinyfs"
+	"tinygo.org/x/tinyfs/fatfs"
 )
 
 // FileBlockDevice is a block device implementation backed by a byte slice
 type FileBlockDevice struct {
 	file       *os.File
 	blankBlock []byte
+	pageSize   uint32
 	blockSize  uint32
 	blockCount uint32
 }
 
-var _ BlockDevice = (*FileBlockDevice)(nil)
+var _ tinyfs.BlockDevice = (*FileBlockDevice)(nil)
 
-func NewFileDevice(file *os.File, blockSize int, blockCount int) *FileBlockDevice {
+func NewFileDevice(file *os.File, pageSize, blockSize int, blockCount int) *FileBlockDevice {
 	dev := &FileBlockDevice{
+		file:       file,
 		blankBlock: make([]byte, blockSize),
+		pageSize:   uint32(pageSize),
 		blockSize:  uint32(blockSize),
 		blockCount: uint32(blockCount),
 	}
@@ -40,11 +46,15 @@ func (bd *FileBlockDevice) Size() int64 {
 }
 
 func (bd *FileBlockDevice) SectorSize() int {
-	return SectorSize
+	return fatfs.SectorSize
 }
 
-func (bd *FileBlockDevice) EraseBlockSize() int {
-	return int(bd.blockSize)
+func (bd *FileBlockDevice) WriteBlockSize() int64 {
+	return int64(bd.pageSize)
+}
+
+func (bd *FileBlockDevice) EraseBlockSize() int64 {
+	return int64(bd.blockSize)
 }
 
 func (bd *FileBlockDevice) EraseBlocks(start int64, len int64) error {

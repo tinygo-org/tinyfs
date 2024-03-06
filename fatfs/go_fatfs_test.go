@@ -1,6 +1,9 @@
+//go:build !tinygo
+
 package fatfs
 
 import (
+	"os"
 	"testing"
 
 	"tinygo.org/x/tinyfs"
@@ -36,6 +39,7 @@ func createTestFS(t *testing.T) (*FATFS, tinyfs.BlockDevice, func()) {
 	dev := tinyfs.NewMemoryDevice(testPageSize, testBlockSize, testBlockCount)
 	fs := New(dev)
 	println("formatting")
+	fs.Configure(&Config{SectorSize: 512})
 	//check(t, fs.Configure())
 	if err := fs.Format(); err != nil {
 		t.Fatal(err)
@@ -75,6 +79,34 @@ func TestDirectories(t *testing.T) {
 		info, err := fs.Stat("potato")
 		check(t, err)
 		println("potato: ", info.Name(), info.IsDir(), info.Mode())
+	})
+}
+
+func TestFiles(t *testing.T) {
+	t.Run("BasicFile", func(t *testing.T) {
+		fs, _, unmount := createTestFS(t)
+		defer unmount()
+		f, err := fs.OpenFile("hello_world.txt", os.O_CREATE|os.O_WRONLY|os.O_TRUNC)
+		check(t, err)
+		n, err := f.Write([]byte("hello world"))
+		check(t, err)
+		check(t, f.Close())
+		if n != 11 {
+			t.Fail()
+		}
+		f, err = fs.Open("hello_world.txt")
+		check(t, err)
+		info, err := f.Stat()
+		check(t, err)
+		if info.IsDir() {
+			t.Fail()
+		}
+		if info.Name() != "hello_world.txt" {
+			t.Fail()
+		}
+		if info.Size() != 11 {
+			t.Fail()
+		}
 	})
 }
 

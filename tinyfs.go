@@ -25,6 +25,7 @@ type File interface {
 	FileHandle
 	IsDir() bool
 	Readdir(n int) (infos []os.FileInfo, err error)
+	Stat() (info os.FileInfo, err error)
 }
 
 // FileHandle is a copy of the experimental os.FileHandle interface in TinyGo
