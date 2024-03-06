@@ -141,23 +141,23 @@ type Info struct {
 
 var _ os.FileInfo = (*Info)(nil)
 
-func (info *Info) Name() string {
+func (info Info) Name() string {
 	return info.name
 }
 
-func (info *Info) Size() int64 {
+func (info Info) Size() int64 {
 	return info.size
 }
 
-func (info *Info) IsDir() bool {
+func (info Info) IsDir() bool {
 	return (info.attr & AttrDirectory) > 0
 }
 
-func (info *Info) Sys() interface{} {
+func (info Info) Sys() interface{} {
 	return nil
 }
 
-func (info *Info) Mode() os.FileMode {
+func (info Info) Mode() os.FileMode {
 	v := os.FileMode(0777)
 	if info.IsDir() {
 		v |= os.ModeDir
@@ -165,7 +165,7 @@ func (info *Info) Mode() os.FileMode {
 	return v
 }
 
-func (info *Info) ModTime() time.Time {
+func (info Info) ModTime() time.Time {
 	return time.Time{}
 }
 
@@ -263,7 +263,11 @@ func (l *FATFS) OpenFile(path string, flags int) (tinyfs.File, error) {
 	}
 
 	// use f_open or f_opendir to obtain a handle to the object
-	var file = &File{fs: l, name: path}
+	var file = &File{fs: l, info: Info{
+		name: path,
+		size: int64(info.fsize),
+		attr: FileAttr(info.fattrib),
+	}}
 	var errno C.FRESULT
 	if path == "/" || info.fattrib&C.AM_DIR > 0 {
 		// directory
@@ -323,7 +327,7 @@ type File struct {
 	fs   *FATFS
 	typ  uint8
 	hndl unsafe.Pointer
-	name string
+	info Info
 }
 
 func (f *File) dirptr() *C.FF_DIR {
@@ -336,7 +340,7 @@ func (f *File) fileptr() *C.FIL {
 
 // Name returns the name of the file as presented to OpenFile
 func (f *File) Name() string {
-	return f.name
+	return f.info.name
 }
 
 func (f *File) Close() error {
@@ -405,6 +409,10 @@ func (f *File) Size() (int64, error) {
 		ptr := f.fileptr()
 		return int64(ptr.obj.objsize), nil
 	}
+}
+
+func (f *File) Stat() (os.FileInfo, error) {
+	return f.info, nil
 }
 
 // Synchronize a file on storage

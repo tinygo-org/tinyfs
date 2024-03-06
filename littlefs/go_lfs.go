@@ -119,23 +119,23 @@ type Info struct {
 	name string
 }
 
-func (info *Info) Name() string {
+func (info Info) Name() string {
 	return info.name
 }
 
-func (info *Info) Size() int64 {
+func (info Info) Size() int64 {
 	return int64(info.size)
 }
 
-func (info *Info) IsDir() bool {
+func (info Info) IsDir() bool {
 	return info.ftyp == fileTypeDir
 }
 
-func (info *Info) Sys() interface{} {
+func (info Info) Sys() interface{} {
 	return nil
 }
 
-func (info *Info) Mode() os.FileMode {
+func (info Info) Mode() os.FileMode {
 	v := os.FileMode(0777)
 	if info.IsDir() {
 		v |= os.ModeDir
@@ -143,7 +143,7 @@ func (info *Info) Mode() os.FileMode {
 	return v
 }
 
-func (info *Info) ModTime() time.Time {
+func (info Info) ModTime() time.Time {
 	return time.Time{}
 }
 
@@ -234,16 +234,16 @@ func (l *LFS) OpenFile(path string, flags int) (tinyfs.File, error) {
 
 	cs := (*C.char)(cstring(path))
 	defer C.free(unsafe.Pointer(cs))
-	file := &File{lfs: l, name: path}
+	file := &File{lfs: l, info: Info{name: path}}
 
-	var ftype fileType
 	info := C.struct_lfs_info{}
 	if err := errval(C.lfs_stat(l.lfs, cs, &info)); err == nil {
-		ftype = fileType(info._type)
+		file.info.ftyp = fileType(info._type)
+		file.info.size = uint32(info.size)
 	}
 
 	var errno C.int
-	if ftype == fileTypeDir {
+	if file.info.ftyp == fileTypeDir {
 		file.typ = fileTypeDir
 		file.hndl = unsafe.Pointer(C.go_lfs_new_lfs_dir())
 		errno = C.lfs_dir_open(l.lfs, file.dirptr(), cs)
@@ -282,7 +282,7 @@ type File struct {
 	lfs  *LFS
 	typ  fileType
 	hndl unsafe.Pointer
-	name string
+	info Info
 }
 
 func (f *File) dirptr() *C.struct_lfs_dir {
@@ -295,7 +295,7 @@ func (f *File) fileptr() *C.struct_lfs_file {
 
 // Name returns the name of the file as presented to OpenFile
 func (f *File) Name() string {
-	return f.name
+	return f.info.name
 }
 
 // Close the file; any pending writes are written out to storage
@@ -366,6 +366,11 @@ func (f *File) Size() (int64, error) {
 	return int64(errno), nil
 }
 
+// Stat satisfies the `fs.File` interface
+func (f *File) Stat() (os.FileInfo, error) {
+	return f.info, nil
+}
+
 // Sync synchronizes to storage so that any pending writes are written out.
 func (f *File) Sync() error {
 	return errval(C.lfs_file_sync(f.lfs.lfs, f.fileptr()))
@@ -412,7 +417,7 @@ func (f *File) Readdir(n int) (infos []os.FileInfo, err error) {
 		if name == "." || name == ".." {
 			continue // littlefs returns . and .., but Readdir() in Go does not
 		}
-		infos = append(infos, &Info{
+		infos = append(infos, Info{
 			ftyp: fileType(info._type),
 			size: uint32(info.size),
 			name: name,

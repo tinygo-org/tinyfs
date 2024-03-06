@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 
 	"tinygo.org/x/tinyfs"
@@ -12,24 +13,26 @@ import (
 func main() {
 
 	// create/format/mount the filesystem
-	fs := fatfs.New(tinyfs.NewMemoryDevice(4096, 64, 64))
-	if err := fs.Format(); err != nil {
+	fat := fatfs.New(tinyfs.NewMemoryDevice(64, 256, 4096))
+	fat.Configure(&fatfs.Config{SectorSize: 512})
+
+	if err := fat.Format(); err != nil {
 		fmt.Println("Could not format", err)
 		os.Exit(1)
 	}
-	if err := fs.Mount(); err != nil {
+	if err := fat.Mount(); err != nil {
 		fmt.Println("Could not mount", err)
 		os.Exit(1)
 	}
 	defer func() {
-		if err := fs.Unmount(); err != nil {
+		if err := fat.Unmount(); err != nil {
 			fmt.Println("Could not ummount", err)
 			os.Exit(1)
 		}
 	}()
 
 	// test an invalid operation to make sure it returns an appropriate error
-	if err := fs.Rename("test.txt", "test2.txt"); err == nil {
+	if err := fat.Rename("test.txt", "test2.txt"); err == nil {
 		fmt.Println("Could not rename file (as expected):", err)
 		os.Exit(1)
 	}
@@ -38,20 +41,20 @@ func main() {
 
 	path := "/tmp"
 	fmt.Println("making directory", path)
-	if err := fs.Mkdir(path, 0777); err != nil {
+	if err := fat.Mkdir(path, 0777); err != nil {
 		fmt.Println("Could not create "+path+" dir", err)
 		os.Exit(1)
 	}
 
 	filepath := path + "/test.txt"
 	fmt.Println("opening file", filepath)
-	f, err := fs.OpenFile(filepath, os.O_CREATE|os.O_WRONLY)
+	f, err := fat.OpenFile(filepath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY)
 	if err != nil {
 		fmt.Println("Could not open file", err)
 		os.Exit(1)
 	}
 
-	size, err := fs.Free()
+	size, err := fat.Free()
 	if err != nil {
 		fmt.Println("Could not get filesystem free:", err.Error())
 	} else {
@@ -79,7 +82,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if stat, err := fs.Stat(path); err != nil {
+	if stat, err := fat.Stat(path); err != nil {
 		fmt.Println("Could not stat dir", err)
 		os.Exit(1)
 	} else {
@@ -88,7 +91,7 @@ func main() {
 			stat.Name(), stat.Size(), stat.IsDir())
 	}
 
-	if stat, err := fs.Stat(filepath); err != nil {
+	if stat, err := fat.Stat(filepath); err != nil {
 		fmt.Println("Could not stat file", err)
 		os.Exit(1)
 	} else {
@@ -98,13 +101,23 @@ func main() {
 	}
 
 	fmt.Println("opening file read only")
-	f, err = fs.OpenFile(filepath, os.O_RDONLY)
+	f, err = fat.OpenFile(filepath, os.O_RDONLY)
 	if err != nil {
 		fmt.Println("Could not open file", err)
 		os.Exit(1)
 	}
 	defer f.Close()
 
+	fmt.Println("calling File.Stat()")
+	info, err := f.Stat()
+	if err != nil {
+		fmt.Println("Could not stat file", err)
+		os.Exit(1)
+	} else {
+		fmt.Printf(
+			"file info: name=%s size=%d dir=%t\n",
+			info.Name(), info.Size(), info.IsDir())
+	}
 	/*
 		if size, err := f.Size(); err != nil {
 			fmt.Printf("Failed getting file size: %v\n", err)
@@ -130,17 +143,17 @@ func main() {
 			}
 			break
 		}
-		fmt.Printf("read %d bytes from file: `%s`", n, string(buf[:n]))
+		fmt.Printf("read %d bytes from file: `%s`\n", n, string(buf[:n]))
 	}
 
-	size, err = fs.Free()
+	size, err = fat.Free()
 	if err != nil {
 		fmt.Println("Could not get filesystem free:", err.Error())
 	} else {
 		fmt.Println("Filesystem free:", size)
 	}
 
-	dir, err := fs.Open("tmp")
+	dir, err := fat.Open("tmp")
 	if err != nil {
 		fmt.Printf("Could not open directory %s: %v\n", path, err)
 		os.Exit(1)
@@ -155,6 +168,26 @@ func main() {
 	for _, info := range infos {
 		fmt.Printf("  directory entry: %s %d %t\n", info.Name(), info.Size(), info.IsDir())
 	}
+
+	// exercise fs.FS interfaces:
+	{
+		var fsfs fs.FS = tinyfs.NewTinyFS(fat)
+		f, err := fsfs.Open(filepath)
+		if err != nil {
+			fmt.Printf("Could not open %s via io/fs package: %v\n", filepath, err)
+			os.Exit(1)
+		}
+		info, err := f.Stat()
+		if err != nil {
+			fmt.Println("Could not stat file", err)
+			os.Exit(1)
+		} else {
+			fmt.Printf(
+				"fsfs info: name=%s size=%d dir=%t\n",
+				info.Name(), info.Size(), info.IsDir())
+		}
+	}
+
 	fmt.Println("done")
 	return
 }
