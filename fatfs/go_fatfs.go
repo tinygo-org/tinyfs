@@ -38,6 +38,7 @@ const (
 	FileResultTooManyOpenFiles FileResult = C.FR_TOO_MANY_OPEN_FILES
 	FileResultInvalidParameter FileResult = C.FR_INVALID_PARAMETER
 	FileResultReadOnly         FileResult = 99
+	FileResultNotImplemented   FileResult = 0xe0 // tinyfs custom error
 
 	TypeFAT12 Type = C.FS_FAT12
 	TypeFAT16 Type = C.FS_FAT16
@@ -125,6 +126,8 @@ func (r FileResult) Error() string {
 		msg = "(19) Given parameter is invalid"
 	case FileResultReadOnly:
 		msg = "(99) Read-only filesystem"
+	case FileResultNotImplemented:
+		msg = "(e0) Feature Not Implemented"
 	default:
 		msg = "unknown file result error"
 	}
@@ -375,19 +378,32 @@ func (f *File) Read(buf []byte) (n int, err error) {
 	return int(br), nil
 }
 
-/*
 // Seek changes the position of the file
 func (f *File) Seek(offset int64, whence int) (ret int64, err error) {
-	errno := C.int(C.lfs_file_seek(f.lfs.lfs, &f.fptr, C.lfs_soff_t(offset), C.int(whence)))
-	if errno < 0 {
-		return -1, errval(errno)
+	// FRESULT f_lseek (
+	// 	FIL* fp,		/* Pointer to the file object */
+	// 	FSIZE_t ofs		/* File pointer from top of file */
+	// )
+	switch whence {
+	case io.SeekStart:
+	case io.SeekCurrent:
+		return -1, FileResultNotImplemented // FIXME: support these options
+	case io.SeekEnd:
+		return -1, FileResultNotImplemented // FIXME: support these options
+	default:
+		return -1, FileResultInvalidParameter
 	}
-	return int64(errno), nil
+	errno := C.f_lseek(f.fileptr(), C.FSIZE_t(offset))
+	if err := errval(errno); err != nil {
+		return -1, err
+	}
+	return offset, nil
 }
 
+/*
 // Tell returns the position of the file
 func (f *File) Tell() (ret int64, err error) {
-	errno := C.int(C.lfs_file_tell(f.lfs.lfs, &f.fptr))
+	errno := C.int(C.f_tell(f.fileptr(), &f.fptr))
 	if errno < 0 {
 		return -1, errval(errno)
 	}

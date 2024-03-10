@@ -146,6 +146,20 @@ func main() {
 		fmt.Printf("read %d bytes from file: `%s`\n", n, string(buf[:n]))
 	}
 
+	offset, err := f.Seek(8, io.SeekStart)
+	if err != nil {
+		fmt.Println("Could not Seek(): ", err)
+	} else {
+		fmt.Println("new offset:", offset)
+		n, err := f.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				fmt.Printf("f.Read() error: %v\n", err.Error())
+			}
+		}
+		fmt.Printf("read %d bytes from file: `%s`\n", n, string(buf[:n]))
+	}
+
 	size, err = fat.Free()
 	if err != nil {
 		fmt.Println("Could not get filesystem free:", err.Error())
