@@ -23,6 +23,7 @@ type Filesystem interface {
 // if/when that is merged and standardized.
 type File interface {
 	FileHandle
+	io.Seeker
 	IsDir() bool
 	Readdir(n int) (infos []os.FileInfo, err error)
 	Stat() (info os.FileInfo, err error)
