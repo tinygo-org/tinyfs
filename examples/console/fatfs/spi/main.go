@@ -1,4 +1,4 @@
-// +build tinygo
+//go:build tinygo
 
 package main
 
@@ -13,7 +13,7 @@ import (
 
 var (
 	blockDevice = flash.NewSPI(
-		&machine.SPI1,
+		machine.SPI1,
 		machine.SPI1_SDO_PIN,
 		machine.SPI1_SDI_PIN,
 		machine.SPI1_SCK_PIN,
