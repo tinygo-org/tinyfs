@@ -1,3 +1,13 @@
+0.5.0
+---
+- **all**
+    - Adding io.Seeker interface to tinyfs.File
+    - Adding Stat() method to tinyfs.File interface and the corresponding littlefs and fatfs implementations. Also adding NewTinyFS() method to create instances of the fs.FS interface.
+- **examples**
+    - Update examples for latest driver changes
+- **modules**
+    - update to latest version of tinygo drivers 0.31.0
+
 0.4.0
 ---
 - **littlefs**
