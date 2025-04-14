@@ -8,6 +8,7 @@ import "C"
 import (
 	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"time"
 	"unsafe"
@@ -100,6 +101,19 @@ func (err Error) Error() string {
 		return "littlefs: File name too long"
 	default:
 		return "littlefs: Unknown error"
+	}
+}
+
+func (err Error) Is(target error) bool {
+	switch err {
+	case errEntryExists:
+		return target == fs.ErrExist
+	case errFileTooLarge, errInvalidParam, errNameTooLong:
+		return target == fs.ErrInvalid
+	case errNoEntry:
+		return target == fs.ErrNotExist
+	default:
+		return false
 	}
 }
 

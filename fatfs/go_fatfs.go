@@ -7,6 +7,7 @@ import "C"
 import (
 	"errors"
 	"io"
+	"io/fs"
 	"os"
 	"time"
 	"unsafe"
@@ -132,6 +133,19 @@ func (r FileResult) Error() string {
 		msg = "unknown file result error"
 	}
 	return "fatfs: " + msg
+}
+
+func (r FileResult) Is(target error) bool {
+	switch r {
+	case FileResultExist:
+		return target == fs.ErrExist
+	case FileResultInvalidParameter, FileResultInvalidName:
+		return target == fs.ErrInvalid
+	case FileResultNoFile, FileResultNoPath:
+		return target == fs.ErrNotExist
+	default:
+		return false
+	}
 }
 
 type FileAttr byte
