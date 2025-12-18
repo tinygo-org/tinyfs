@@ -185,6 +185,10 @@ static int lfs_bd_flush(lfs_t *lfs,
             return err;
         }
 
+        if (pcache->block != LFS_BLOCK_NULL && pcache->block == rcache->block) {
+            lfs_cache_drop(lfs, rcache);
+        }
+
         if (validate) {
             // check data on disk
             lfs_cache_drop(lfs, rcache);

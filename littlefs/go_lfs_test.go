@@ -211,7 +211,15 @@ func TestDirectories(t *testing.T) {
 	})
 
 	t.Run("NestedDirectories", func(t *testing.T) {
-
+		check(t, fs.Mkdir("parent", 0777))
+		check(t, fs.Mkdir("parent/child", 0777))
+		check(t, fs.Mkdir("parent/child/grandchild", 0777))
+		// Verify they exist
+		info, err := fs.Stat("parent/child/grandchild")
+		check(t, err)
+		if !info.IsDir() {
+			t.Error("expected directory")
+		}
 	})
 
 	t.Run("MultiBlockDirectory", func(t *testing.T) {
@@ -335,5 +343,57 @@ func readFileTest(t *testing.T, lfs *LFS, size int, name string) {
 func check(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+// TestDirectoryPersistence verifies that directories persist after unmount/remount.
+// This is a regression test for the Sync() fix that ensures filesystem changes
+// are flushed to the underlying block device.
+func TestDirectoryPersistence(t *testing.T) {
+	bd := tinyfs.NewMemoryDevice(testPageSize, testBlockSize, testBlockCount)
+	fs := New(bd).Configure(defaultConfig)
+
+	// Format and mount
+	if err := fs.Format(); err != nil {
+		t.Fatalf("Format failed: %v", err)
+	}
+	if err := fs.Mount(); err != nil {
+		t.Fatalf("Mount failed: %v", err)
+	}
+
+	// Create directory
+	dirName := "persist_test"
+	if err := fs.Mkdir(dirName, 0755); err != nil {
+		t.Fatalf("Mkdir failed: %v", err)
+	}
+
+	// Verify immediate existence
+	info, err := fs.Stat(dirName)
+	if err != nil {
+		t.Fatalf("Stat after mkdir failed: %v", err)
+	}
+	if !info.IsDir() {
+		t.Fatalf("Expected directory, got file")
+	}
+
+	// Unmount
+	if err := fs.Unmount(); err != nil {
+		t.Fatalf("Unmount failed: %v", err)
+	}
+
+	// Create new filesystem instance and remount (simulates reboot)
+	fs2 := New(bd).Configure(defaultConfig)
+	if err := fs2.Mount(); err != nil {
+		t.Fatalf("Remount failed: %v", err)
+	}
+	defer fs2.Unmount()
+
+	// Verify directory persisted
+	info2, err := fs2.Stat(dirName)
+	if err != nil {
+		t.Fatalf("Directory '%s' lost after remount: %v", dirName, err)
+	}
+	if !info2.IsDir() {
+		t.Fatalf("'%s' exists but is not a directory", dirName)
 	}
 }
