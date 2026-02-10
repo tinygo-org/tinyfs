@@ -14,8 +14,13 @@ const (
 	debug bool = false
 )
 
+// go_lfs_block_device_read is the CGo callback for LittleFS block reads.
+// The size parameter must be uint32 (not int) to match C's lfs_size_t (uint32_t).
+// On 64-bit hosts, Go int is 64 bits but CGo only writes the lower 32 bits,
+// leaving garbage in the upper half — causing slice-bounds panics.
+//
 //export go_lfs_block_device_read
-func go_lfs_block_device_read(ctx unsafe.Pointer, block uint32, offset uint32, buf unsafe.Pointer, size int) int {
+func go_lfs_block_device_read(ctx unsafe.Pointer, block uint32, offset uint32, buf unsafe.Pointer, size uint32) int {
 	if debug {
 		fmt.Printf("go_lfs_block_device_read: %v, %v, %v, %v, %v\n", ctx, block, offset, buf, size)
 	}
@@ -26,8 +31,11 @@ func go_lfs_block_device_read(ctx unsafe.Pointer, block uint32, offset uint32, b
 	return go_lfs_block_errval("read", err)
 }
 
+// go_lfs_block_device_prog is the CGo callback for LittleFS block writes.
+// See go_lfs_block_device_read for why size must be uint32.
+//
 //export go_lfs_block_device_prog
-func go_lfs_block_device_prog(ctx unsafe.Pointer, block uint32, offset uint32, buf unsafe.Pointer, size int) int {
+func go_lfs_block_device_prog(ctx unsafe.Pointer, block uint32, offset uint32, buf unsafe.Pointer, size uint32) int {
 	if debug {
 		fmt.Printf("go_lfs_block_device_prog: %v, %v, %v, %v, %v\n", ctx, block, offset, buf, size)
 	}

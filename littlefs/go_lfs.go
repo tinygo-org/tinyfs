@@ -200,48 +200,24 @@ func (l *LFS) Mount() error {
 }
 
 func (l *LFS) Format() error {
-	if err := errval(C.lfs_format(l.lfs, l.cfg)); err != nil {
-		return err
-	}
-	if syncer, ok := l.dev.(tinyfs.Syncer); ok {
-		return syncer.Sync()
-	}
-	return nil
+	return errval(C.lfs_format(l.lfs, l.cfg))
 }
 
 func (l *LFS) Unmount() error {
-	if err := errval(C.lfs_unmount(l.lfs)); err != nil {
-		return err
-	}
-	if syncer, ok := l.dev.(tinyfs.Syncer); ok {
-		return syncer.Sync()
-	}
-	return nil
+	return errval(C.lfs_unmount(l.lfs))
 }
 
 func (l *LFS) Remove(path string) error {
 	cs := cstring(path)
 	defer C.free(unsafe.Pointer(cs))
-	if err := errval(C.lfs_remove(l.lfs, cs)); err != nil {
-		return err
-	}
-	if syncer, ok := l.dev.(tinyfs.Syncer); ok {
-		return syncer.Sync()
-	}
-	return nil
+	return errval(C.lfs_remove(l.lfs, cs))
 }
 
 func (l *LFS) Rename(oldPath string, newPath string) error {
 	cs1, cs2 := cstring(oldPath), cstring(newPath)
 	defer C.free(unsafe.Pointer(cs1))
 	defer C.free(unsafe.Pointer(cs2))
-	if err := errval(C.lfs_rename(l.lfs, cs1, cs2)); err != nil {
-		return err
-	}
-	if syncer, ok := l.dev.(tinyfs.Syncer); ok {
-		return syncer.Sync()
-	}
-	return nil
+	return errval(C.lfs_rename(l.lfs, cs1, cs2))
 }
 
 func (l *LFS) Stat(path string) (os.FileInfo, error) {
@@ -261,13 +237,7 @@ func (l *LFS) Stat(path string) (os.FileInfo, error) {
 func (l *LFS) Mkdir(path string, _ os.FileMode) error {
 	cs := (*C.char)(cstring(path))
 	defer C.free(unsafe.Pointer(cs))
-	if err := errval(C.lfs_mkdir(l.lfs, cs)); err != nil {
-		return err
-	}
-	if syncer, ok := l.dev.(tinyfs.Syncer); ok {
-		return syncer.Sync()
-	}
-	return nil
+	return errval(C.lfs_mkdir(l.lfs, cs))
 }
 
 func (l *LFS) Open(path string) (tinyfs.File, error) {
@@ -303,24 +273,6 @@ func (l *LFS) OpenFile(path string, flags int) (tinyfs.File, error) {
 			file.hndl = nil
 		}
 		return nil, err
-	}
-
-	if flags&(os.O_CREATE|os.O_TRUNC) != 0 {
-		if flags&os.O_TRUNC != 0 {
-			if err := errval(C.lfs_file_sync(l.lfs, file.fileptr())); err != nil {
-				file.Close()
-				return nil, err
-			}
-		}
-		if syncer, ok := l.dev.(tinyfs.Syncer); ok {
-			if err := syncer.Sync(); err != nil {
-				// Should we close and return error?
-				// Maybe just log? But we can't log.
-				// For now let's just return error and close.
-				file.Close()
-				return nil, err
-			}
-		}
 	}
 
 	return file, nil
@@ -367,20 +319,13 @@ func (f *File) Close() error {
 			C.free(f.hndl)
 			f.hndl = nil
 		}()
-		var err error
 		switch f.typ {
 		case fileTypeReg:
-			err = errval(C.lfs_file_close(f.lfs.lfs, f.fileptr()))
+			return errval(C.lfs_file_close(f.lfs.lfs, f.fileptr()))
 		case fileTypeDir:
-			err = errval(C.lfs_dir_close(f.lfs.lfs, f.dirptr()))
+			return errval(C.lfs_dir_close(f.lfs.lfs, f.dirptr()))
 		default:
 			panic("lfs: unknown typ for file handle")
-		}
-		if err != nil {
-			return err
-		}
-		if syncer, ok := f.lfs.dev.(tinyfs.Syncer); ok {
-			return syncer.Sync()
 		}
 	}
 	return nil
@@ -442,27 +387,12 @@ func (f *File) Stat() (os.FileInfo, error) {
 
 // Sync synchronizes to storage so that any pending writes are written out.
 func (f *File) Sync() error {
-	if err := errval(C.lfs_file_sync(f.lfs.lfs, f.fileptr())); err != nil {
-		return err
-	}
-	if syncer, ok := f.lfs.dev.(tinyfs.Syncer); ok {
-		return syncer.Sync()
-	}
-	return nil
+	return errval(C.lfs_file_sync(f.lfs.lfs, f.fileptr()))
 }
 
 // Truncate the size of the file to the specified size
 func (f *File) Truncate(size uint32) error {
-	if err := errval(C.lfs_file_truncate(f.lfs.lfs, f.fileptr(), C.lfs_off_t(size))); err != nil {
-		return err
-	}
-	if err := errval(C.lfs_file_sync(f.lfs.lfs, f.fileptr())); err != nil {
-		return err
-	}
-	if syncer, ok := f.lfs.dev.(tinyfs.Syncer); ok {
-		return syncer.Sync()
-	}
-	return nil
+	return errval(C.lfs_file_truncate(f.lfs.lfs, f.fileptr(), C.lfs_off_t(size)))
 }
 
 func (f *File) Write(buf []byte) (n int, err error) {
