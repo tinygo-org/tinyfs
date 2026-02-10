@@ -185,10 +185,6 @@ static int lfs_bd_flush(lfs_t *lfs,
             return err;
         }
 
-        if (pcache->block != LFS_BLOCK_NULL && pcache->block == rcache->block) {
-            lfs_cache_drop(lfs, rcache);
-        }
-
         if (validate) {
             // check data on disk
             lfs_cache_drop(lfs, rcache);
@@ -1073,7 +1069,11 @@ popped:
 }
 #endif
 
-static lfs_stag_t lfs_dir_fetchmatch(lfs_t *lfs,
+// Workaround for LLVM bug: this function gets miscompiled at -O2 and above,
+// causing directory metadata scans to return incorrect results (mkdir succeeds
+// but subsequent stat/open can't find the entry). Disabling optimization here
+// prevents the miscompilation while keeping the rest of lfs.c fully optimized.
+static __attribute__((optnone)) lfs_stag_t lfs_dir_fetchmatch(lfs_t *lfs,
         lfs_mdir_t *dir, const lfs_block_t pair[2],
         lfs_tag_t fmask, lfs_tag_t ftag, uint16_t *id,
         int (*cb)(void *data, lfs_tag_t tag, const void *buffer), void *data) {

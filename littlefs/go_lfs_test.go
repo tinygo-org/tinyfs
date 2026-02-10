@@ -347,8 +347,6 @@ func check(t *testing.T, err error) {
 }
 
 // TestDirectoryPersistence verifies that directories persist after unmount/remount.
-// This is a regression test for the Sync() fix that ensures filesystem changes
-// are flushed to the underlying block device.
 func TestDirectoryPersistence(t *testing.T) {
 	bd := tinyfs.NewMemoryDevice(testPageSize, testBlockSize, testBlockCount)
 	fs := New(bd).Configure(defaultConfig)
