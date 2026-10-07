@@ -104,3 +104,4 @@ Successfully mounted LittleFS filesystem.
 
 The FAT file system is not currently working, due to https://github.com/tinygo-org/tinygo/issues/3460.
 
+FAT file timestamps use UTC, with two-second resolution.

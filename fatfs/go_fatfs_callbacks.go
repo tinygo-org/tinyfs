@@ -98,7 +98,7 @@ func go_fatfs_get_fattime() (t uint32) {
 		secondsPerUnit = 2    // FAT timestamps have two-second resolution
 	)
 
-	now := time.Now()
+	now := time.Now().UTC()
 	year, month, day := now.Date()
 	hour, minute, second := now.Hour(), now.Minute(), now.Second()
 	t |= uint32(year-epochYear) << yearShift
