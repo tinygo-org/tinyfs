@@ -18,38 +18,51 @@ const (
 )
 
 func TestStoredModificationTime(t *testing.T) {
-	fs, dev, unmount := createTestFS(t)
-	defer unmount()
-	if typ := Type(fs.fs.fs_type); typ != TypeFAT12 && typ != TypeFAT16 {
-		t.Fatalf("expected FAT12 or FAT16, got %s", typ)
-	}
-	before := time.Now().Truncate(2 * time.Second)
-	f, err := fs.OpenFile("TIME.TXT", os.O_CREATE|os.O_WRONLY|os.O_TRUNC)
-	check(t, err)
-	_, err = f.Write([]byte("timestamp"))
-	check(t, err)
-	check(t, f.Close())
-	after := time.Now()
+	for _, loc := range []*time.Location{
+		time.UTC,
+		time.FixedZone("UTC+14", 14*60*60),
+		time.FixedZone("UTC-12", -12*60*60),
+	} {
+		t.Run(loc.String(), func(t *testing.T) {
+			// Stored timestamps must be UTC regardless of the local time zone.
+			local := time.Local
+			time.Local = loc
+			t.Cleanup(func() { time.Local = local })
 
-	root := make([]byte, int(fs.fs.n_rootdir)*32)
-	_, err = dev.ReadAt(root, int64(fs.fs.dirbase)*SectorSize)
-	check(t, err)
-	for offset := 0; offset < len(root); offset += 32 {
-		entry := root[offset : offset+32]
-		if string(entry[:11]) != "TIME    TXT" {
-			continue
-		}
-		// FAT directory entries store modification time at bytes 22-25.
-		clock := binary.LittleEndian.Uint16(entry[22:24])
-		date := binary.LittleEndian.Uint16(entry[24:26])
-		got := time.Date(1980+int(date>>9), time.Month(date>>5&15), int(date&31),
-			int(clock>>11), int(clock>>5&63), int(clock&31)*2, 0, time.Local)
-		if got.Before(before) || got.After(after) {
-			t.Fatalf("stored modification time = %s, want between %s and %s", got, before, after)
-		}
-		return
+			fs, dev, unmount := createTestFS(t)
+			defer unmount()
+			if typ := Type(fs.fs.fs_type); typ != TypeFAT12 && typ != TypeFAT16 {
+				t.Fatalf("expected FAT12 or FAT16, got %s", typ)
+			}
+			before := time.Now().UTC().Truncate(2 * time.Second)
+			f, err := fs.OpenFile("TIME.TXT", os.O_CREATE|os.O_WRONLY|os.O_TRUNC)
+			check(t, err)
+			_, err = f.Write([]byte("timestamp"))
+			check(t, err)
+			check(t, f.Close())
+			after := time.Now().UTC()
+
+			root := make([]byte, int(fs.fs.n_rootdir)*32)
+			_, err = dev.ReadAt(root, int64(fs.fs.dirbase)*SectorSize)
+			check(t, err)
+			for offset := 0; offset < len(root); offset += 32 {
+				entry := root[offset : offset+32]
+				if string(entry[:11]) != "TIME    TXT" {
+					continue
+				}
+				// FAT directory entries store modification time at bytes 22-25.
+				clock := binary.LittleEndian.Uint16(entry[22:24])
+				date := binary.LittleEndian.Uint16(entry[24:26])
+				got := time.Date(1980+int(date>>9), time.Month(date>>5&15), int(date&31),
+					int(clock>>11), int(clock>>5&63), int(clock&31)*2, 0, time.UTC)
+				if got.Before(before) || got.After(after) {
+					t.Fatalf("stored modification time = %s, want between %s and %s", got, before, after)
+				}
+				return
+			}
+			t.Fatal("TIME.TXT not found in root directory")
+		})
 	}
-	t.Fatal("TIME.TXT not found in root directory")
 }
 
 func TestType_String(t *testing.T) {
