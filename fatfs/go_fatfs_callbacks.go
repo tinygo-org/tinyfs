@@ -83,15 +83,30 @@ func go_fatfs_disk_ioctl(drv unsafe.Pointer, cmd uint8, param unsafe.Pointer) in
 
 //export go_fatfs_get_fattime
 func go_fatfs_get_fattime() (t uint32) {
+	const (
+		epochYear      = 1980 // years are stored as an offset from 1980
+		yearShift      = 25   // year offset, bits 25-31
+		monthShift     = 21   // month, bits 21-24
+		dayShift       = 16   // day of month, bits 16-20
+		hourShift      = 11   // hour, bits 11-15
+		minuteShift    = 5    // minute, bits 5-10
+		monthMask      = 0x0f // month, 4 bits
+		dayMask        = 0x1f // day of month, 5 bits
+		hourMask       = 0x1f // hour, 5 bits
+		minuteMask     = 0x3f // minute, 6 bits
+		secondMask     = 0x1f // two-second units, 5 bits
+		secondsPerUnit = 2    // FAT timestamps have two-second resolution
+	)
+
 	now := time.Now()
 	year, month, day := now.Date()
 	hour, minute, second := now.Hour(), now.Minute(), now.Second()
-	t |= uint32(year-1980) << 24
-	t |= (uint32(month) & 0xF) << 20
-	t |= (uint32(day) & 0x1F) << 15
-	t |= (uint32(hour) & 0x1F) << 10
-	t |= (uint32(minute) & 0x3F) << 4
-	t |= (uint32(second) / 2) & 0xF
+	t |= uint32(year-epochYear) << yearShift
+	t |= (uint32(month) & monthMask) << monthShift
+	t |= (uint32(day) & dayMask) << dayShift
+	t |= (uint32(hour) & hourMask) << hourShift
+	t |= (uint32(minute) & minuteMask) << minuteShift
+	t |= (uint32(second) / secondsPerUnit) & secondMask
 	return t
 }
 
